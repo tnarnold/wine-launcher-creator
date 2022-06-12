@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION="1.0.8"
+VERSION="2.0.0"
 
 import sys
 import glob
@@ -28,8 +28,9 @@ import shutil
 import ConfigParser
 import urllib
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 def check_output(*popenargs, **kwargs):
     """This function is copied from python 2.7.1 subprocess.py
@@ -299,17 +300,17 @@ class MainWindow(QMainWindow):
         button = QPushButton("Select launcher's name as prefix")
         layout.addWidget(button)
         button.setToolTip("Select new Wine prefix (bottle) in default prefix directory,\nor use existing if prefix already exists.\nUses same name as the launcher name.")
-        self.connect(button, SIGNAL("clicked()"), self.selectPrefix)
+        button.clicked.connect(self.selectPrefix)
 
         button = QPushButton("Launch WineCfg/Populate prefix files")
         layout.addWidget(button)
         button.setToolTip("Launch WineCfg for selected Wine prefix\nand populate with wine files if necessary")
-        self.connect(button, SIGNAL("clicked()"), self.winecfg)
+        button.clicked.connect(self.winecfg)
 
         button = QPushButton("Launch WineTricks")
         layout.addWidget(button)
         button.setToolTip("Launch WineTricks for selected Wine prefix")
-        self.connect(button, SIGNAL("clicked()"), self.winetricks)
+        button.clicked.connect(self.winetricks)
 
         #fix layout
         layout = QHBoxLayout()
@@ -333,7 +334,7 @@ class MainWindow(QMainWindow):
         self.debug = QPushButton("Debug launching")
         layout.addWidget(self.debug)
         self.debug.setToolTip("Try to launch the application,\nand show command line output after it finishes")
-        self.connect(self.debug, SIGNAL("clicked()"), self.debugLauncher)
+        self.debug.clicked.connect(self.debugLauncher)
 
         #always visible buttons
         layout = QHBoxLayout()
@@ -343,15 +344,15 @@ class MainWindow(QMainWindow):
         self.settings = button
         button.setCheckable(True)
         layout.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.settingsToggle)
+        button.clicked.connect(self.settingsToggle)
 
         button = QPushButton("Create exe launcher")
         layout.addWidget(button,1)
-        self.connect(button, SIGNAL("clicked()"), self.createLauncher)
+        button.clicked.connect(self.createLauncher)
 
         button = QPushButton("About")
         layout.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.about)
+        button.clicked.connect(self.about)
 
         #widget containing options interface
         self.widget2 = QWidget()
@@ -380,19 +381,19 @@ class MainWindow(QMainWindow):
 
         button = QPushButton("Install Wine Launcher Creator as Gnome 2 Nautilus Action")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.nautilus2Action)
+        button.clicked.connect(self.nautilus2Action)
 
         button = QPushButton("Install Wine Launcher Creator as Gnome 3 Nautilus Action")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.nautilus3Action)
+        button.clicked.connect(self.nautilus3Action)
 
         button = QPushButton("Install Wine Launcher Creator as Nautilus Script")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.nautilusScript)
+        button.clicked.connect(self.nautilusScript)
 
         button = QPushButton("Install Wine Launcher Creator as KDE 4 Dolphin Service menu")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.dolphinMenu)
+        button.clicked.connect(self.dolphinMenu)
 
         label = QLabel("""Additional information about restricting internet access to (untrusted) (Windows)
             <br>application can be found in /usr/local/share/wlcreator/NoInternet.txt""")
@@ -401,11 +402,11 @@ class MainWindow(QMainWindow):
 
         button = QPushButton("Open NoInternet.txt")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.openNoInternet)
+        button.clicked.connect(self.openNoInternet)
 
         button = QPushButton("Revert all settings to default values")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.defaultConfig)
+        button.clicked.connect(self.defaultConfig)
 
         #temorary directory for icon extraction
         self.temporary = tempfile.mkdtemp()
