@@ -186,7 +186,7 @@ class BrowseControl(QHBoxLayout):
 
 class EditControl(QHBoxLayout):
     """control containing label and edit control"""
-    def __init__(self, label, toolTip, callback=None, parent=None): 
+    def __init__(self, label, toolTip, callback=None, parent=None):
         super(EditControl, self).__init__(parent)
 
         #control's label
@@ -230,7 +230,7 @@ class WaitDialog(QDialog):
 
 class MainWindow(QMainWindow):
     """main application window"""
-    def __init__(self, parent=None): 
+    def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
 
         #user's desktop location
@@ -287,8 +287,8 @@ class MainWindow(QMainWindow):
         self.iconWidget.setMovement(QListView.Static)
         self.iconWidget.setResizeMode(QListView.Adjust)
         self.iconWidget.setIconSize(QSize(256,256))
-        
-        self.prefix = BrowseControl("Wine prefix path", "Select Wine prefix path", 
+
+        self.prefix = BrowseControl("Wine prefix path", "Select Wine prefix path",
             "Path to directory containing Wine prefix (bottle)", self.cfgDefaults['WinePrefix'],
             browseDirectory=True, setStatus=self.setStatus, showHidden=True)
         self.layout1.addLayout(self.prefix)
