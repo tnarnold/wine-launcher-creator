@@ -9,6 +9,12 @@ Windows programs (using Wine). The program does the following tasks:
    4. Create desktop launcher
 
 
+Versions
+-----
+
+v1.0.8 keept for old python2 and PyQt4
+v2.0.0 updated to python3 and PyQt5
+
 Usage
 -----
 WLCreator will try to extract icons from exe file, and to search for all ico
@@ -31,7 +37,7 @@ available:
 Options are saved in ~/.config/wlcreator/ directory.
 
 WLCreator uses wrestool (icoutils) to extract icons from exe files, and icotool
-(icoutils) to convert ico files to png files. It uses Qt framework and PyQt
+(icoutils) to convert ico files to png files. It uses Qt framework and PyQt5
 bindings for Python, and also some bash commands.
 
 Sometimes wrestool cannot extract icons, and this is the situation where icon
@@ -61,6 +67,7 @@ To use it as a KDE 4 Dolphin Service, select appropriate option in Settings sect
 
 IMPORTANT: Gnome 3 users need to logout/login before new launcher is active, or alternatively,
 press ALT+F2 and enter "r" to restart the shell.
+or for wayland use update-desktop-database <path to scan recursive for new *.desktop>
 
 Integration is tested on Ubuntu 12.04 (Unity), OpenSUSE 12.3 (KDE 4) and Fedora 17 (Gnome 3).
 
