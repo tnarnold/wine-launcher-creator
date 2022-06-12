@@ -24,7 +24,6 @@ import glob
 import os
 import tempfile
 import subprocess
-import shlex
 import shutil
 import configparser
 import urllib
@@ -56,7 +55,6 @@ def check_output(*popenargs, **kwargs):
 
 def bash(command, workdir=None):
     """Helper function to execute bash commands"""
-    #command = shlex.split(command.encode("utf-8"))
     print("COMMAND:",command)
 #    try:
 #        code = subprocess.call(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, cwd=workdir)
