@@ -16,20 +16,25 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION="1.0.8"
+from __future__ import print_function
+VERSION="2.0.0"
 
 import sys
 import glob
 import os
 import tempfile
 import subprocess
-import shlex
 import shutil
-import ConfigParser
+import configparser
 import urllib
+import urllib.parse
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+
+def unicode(instring):
+    return instring
 
 def check_output(*popenargs, **kwargs):
     """This function is copied from python 2.7.1 subprocess.py
@@ -50,8 +55,7 @@ def check_output(*popenargs, **kwargs):
 
 def bash(command, workdir=None):
     """Helper function to execute bash commands"""
-    #command = shlex.split(command.encode("utf-8"))
-    print "COMMAND:",command
+    print("COMMAND:",command)
 #    try:
 #        code = subprocess.call(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, cwd=workdir)
 #    except:
@@ -63,8 +67,8 @@ def bash(command, workdir=None):
         code = process.poll()
     except:
         code = 127
-    if len(output) > 0: print "OUTPUT:\n",output
-    print "CODE:",code
+    if len(output) > 0: print("OUTPUT:\n",output)
+    print("CODE:",code)
     return code,output
 
 def checkDependencies():
@@ -98,24 +102,24 @@ class BrowseControl(QHBoxLayout):
         self.edit = QLineEdit()
         self.addWidget(self.edit,1)
         self.edit.setToolTip(toolTip)
-        self.connect(self.edit, SIGNAL("textChanged(QString)"), self.edited)
+        self.edit.textChanged['QString'].connect(self.edited)
         #control's up button
         if oneUp:
             self.uButton = QPushButton("Up")
             self.addWidget(self.uButton)
             self.uButton.setToolTip("Go one level up")
-            self.connect(self.uButton, SIGNAL("clicked()"), self.oneUp)
+            self.uButton.clicked.connect(self.oneUp)
         #control's browse button
         self.button = QPushButton("Browse")
         self.addWidget(self.button)
         self.button.setToolTip("Select new "+label)
-        self.connect(self.button, SIGNAL("clicked()"), self.browse)
+        self.button.clicked.connect(self.browse)
         #control's default button
         if defaultPath != "":
             self.dButton = QPushButton("Default")
             self.addWidget(self.dButton)
             self.dButton.setToolTip("Reset "+label+" to '"+defaultPath+"'")
-            self.connect(self.dButton, SIGNAL("clicked()"), self.default)
+            self.dButton.clicked.connect(self.default)
 
         #function to call after successful change of path
         self.callback = callback
@@ -146,6 +150,8 @@ class BrowseControl(QHBoxLayout):
             #dialog for selecting directories
             dialog = QFileDialog(None,self.browseTitle,self.edit.text())
             dialog.setFileMode(QFileDialog.Directory)
+            if self.pathValid:
+                dialog.setDirectory(self.path)
             if self.showHidden:
                 dialog.setFilter(QDir.AllEntries | QDir.Hidden )
         else:
@@ -185,7 +191,7 @@ class BrowseControl(QHBoxLayout):
 
 class EditControl(QHBoxLayout):
     """control containing label and edit control"""
-    def __init__(self, label, toolTip, callback=None, parent=None): 
+    def __init__(self, label, toolTip, callback=None, parent=None):
         super(EditControl, self).__init__(parent)
 
         #control's label
@@ -196,7 +202,7 @@ class EditControl(QHBoxLayout):
         self.addWidget(self.edit,1)
         self.callback = callback
         self.edit.setToolTip(toolTip)
-        self.connect(self.edit, SIGNAL("textChanged(QString)"), self.edited)
+        self.edit.textChanged['QString'].connect(self.edited)
         self.text = ""
 
     def edited(self):
@@ -229,7 +235,7 @@ class WaitDialog(QDialog):
 
 class MainWindow(QMainWindow):
     """main application window"""
-    def __init__(self, parent=None): 
+    def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
 
         #user's desktop location
@@ -286,8 +292,8 @@ class MainWindow(QMainWindow):
         self.iconWidget.setMovement(QListView.Static)
         self.iconWidget.setResizeMode(QListView.Adjust)
         self.iconWidget.setIconSize(QSize(256,256))
-        
-        self.prefix = BrowseControl("Wine prefix path", "Select Wine prefix path", 
+
+        self.prefix = BrowseControl("Wine prefix path", "Select Wine prefix path",
             "Path to directory containing Wine prefix (bottle)", self.cfgDefaults['WinePrefix'],
             browseDirectory=True, setStatus=self.setStatus, showHidden=True)
         self.layout1.addLayout(self.prefix)
@@ -299,17 +305,17 @@ class MainWindow(QMainWindow):
         button = QPushButton("Select launcher's name as prefix")
         layout.addWidget(button)
         button.setToolTip("Select new Wine prefix (bottle) in default prefix directory,\nor use existing if prefix already exists.\nUses same name as the launcher name.")
-        self.connect(button, SIGNAL("clicked()"), self.selectPrefix)
+        button.clicked.connect(self.selectPrefix)
 
         button = QPushButton("Launch WineCfg/Populate prefix files")
         layout.addWidget(button)
         button.setToolTip("Launch WineCfg for selected Wine prefix\nand populate with wine files if necessary")
-        self.connect(button, SIGNAL("clicked()"), self.winecfg)
+        button.clicked.connect(self.winecfg)
 
         button = QPushButton("Launch WineTricks")
         layout.addWidget(button)
         button.setToolTip("Launch WineTricks for selected Wine prefix")
-        self.connect(button, SIGNAL("clicked()"), self.winetricks)
+        button.clicked.connect(self.winetricks)
 
         #fix layout
         layout = QHBoxLayout()
@@ -333,7 +339,7 @@ class MainWindow(QMainWindow):
         self.debug = QPushButton("Debug launching")
         layout.addWidget(self.debug)
         self.debug.setToolTip("Try to launch the application,\nand show command line output after it finishes")
-        self.connect(self.debug, SIGNAL("clicked()"), self.debugLauncher)
+        self.debug.clicked.connect(self.debugLauncher)
 
         #always visible buttons
         layout = QHBoxLayout()
@@ -343,15 +349,15 @@ class MainWindow(QMainWindow):
         self.settings = button
         button.setCheckable(True)
         layout.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.settingsToggle)
+        button.clicked.connect(self.settingsToggle)
 
         button = QPushButton("Create exe launcher")
         layout.addWidget(button,1)
-        self.connect(button, SIGNAL("clicked()"), self.createLauncher)
+        button.clicked.connect(self.createLauncher)
 
         button = QPushButton("About")
         layout.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.about)
+        button.clicked.connect(self.about)
 
         #widget containing options interface
         self.widget2 = QWidget()
@@ -380,19 +386,19 @@ class MainWindow(QMainWindow):
 
         button = QPushButton("Install Wine Launcher Creator as Gnome 2 Nautilus Action")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.nautilus2Action)
+        button.clicked.connect(self.nautilus2Action)
 
         button = QPushButton("Install Wine Launcher Creator as Gnome 3 Nautilus Action")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.nautilus3Action)
+        button.clicked.connect(self.nautilus3Action)
 
         button = QPushButton("Install Wine Launcher Creator as Nautilus Script")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.nautilusScript)
+        button.clicked.connect(self.nautilusScript)
 
         button = QPushButton("Install Wine Launcher Creator as KDE 4 Dolphin Service menu")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.dolphinMenu)
+        button.clicked.connect(self.dolphinMenu)
 
         label = QLabel("""Additional information about restricting internet access to (untrusted) (Windows)
             <br>application can be found in /usr/local/share/wlcreator/NoInternet.txt""")
@@ -401,22 +407,22 @@ class MainWindow(QMainWindow):
 
         button = QPushButton("Open NoInternet.txt")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.openNoInternet)
+        button.clicked.connect(self.openNoInternet)
 
         button = QPushButton("Revert all settings to default values")
         self.layout2.addWidget(button)
-        self.connect(button, SIGNAL("clicked()"), self.defaultConfig)
+        button.clicked.connect(self.defaultConfig)
 
         #temorary directory for icon extraction
         self.temporary = tempfile.mkdtemp()
         #first argument is path to exe file
         path = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else ""
-        path = urllib.unquote(path)
-        self.executable.edit.setText(path.decode("utf-8"))
+        path = urllib.parse.unquote(path)
+        self.executable.edit.setText(path)
         #second argument is path to main application directory (ico files search path/initial name guess)
         path = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.dirname(self.executable.path).encode("utf-8")
-        path = urllib.unquote(path)
-        self.application.edit.setText(path.decode("utf-8"))
+        path = urllib.parse.unquote(path)
+        self.application.edit.setText(path)
 
         #directory for program's configuration file
         self.config = os.path.expanduser("~/.config/wlcreator")
@@ -564,7 +570,7 @@ class MainWindow(QMainWindow):
             self.setStatus("You need to select an icon first.")
             return
         #full path to selected icon
-        iconSource = unicode(items[0].data(Qt.UserRole).toString())
+        iconSource = unicode(items[0].data(Qt.UserRole))
         #icon's name
         iconName = os.path.basename(iconSource)
         #full path to destination icon
@@ -592,7 +598,7 @@ class MainWindow(QMainWindow):
         launcherPath = os.path.join(self.launcher.path, self.name.text+".desktop")
         #write launcher's contents
         launcherFile = open(launcherPath, "w")
-        launcherFile.write(launcherText.encode("utf-8"))
+        launcherFile.write(launcherText)
         launcherFile.close()
         #make it executable
         bash("chmod 755 \"" + launcherPath + "\"")
@@ -621,7 +627,7 @@ class MainWindow(QMainWindow):
         cfgRead = False
         if os.access(cfgfile, os.F_OK):
             #if config exists, load it
-            cfg = ConfigParser.SafeConfigParser(self.cfgDefaults)
+            cfg = configparser.ConfigParser(self.cfgDefaults)
             cfg.read(cfgfile)
             if "WLCreator" in cfg.sections():
                 self.launcher.edit.setText(cfg.get("WLCreator","Launcher").decode("utf-8"))
@@ -639,7 +645,7 @@ class MainWindow(QMainWindow):
         if not os.access(self.config, os.F_OK):
             os.makedirs(self.config)
         cfgfile = open(os.path.join(self.config,"settings.ini"),"w")
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.ConfigParser()
         if not cfg.has_section("WLCreator"):
             cfg.add_section("WLCreator")
         cfg.set("WLCreator","Launcher",self.launcher.path.encode("utf-8"))
