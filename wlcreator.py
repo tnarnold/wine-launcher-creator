@@ -16,6 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 VERSION="2.0.0"
 
 import sys
@@ -25,12 +26,16 @@ import tempfile
 import subprocess
 import shlex
 import shutil
-import ConfigParser
+import configparser
 import urllib
+import urllib.parse
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+
+def unicode(instring):
+    return instring
 
 def check_output(*popenargs, **kwargs):
     """This function is copied from python 2.7.1 subprocess.py
@@ -52,7 +57,7 @@ def check_output(*popenargs, **kwargs):
 def bash(command, workdir=None):
     """Helper function to execute bash commands"""
     #command = shlex.split(command.encode("utf-8"))
-    print "COMMAND:",command
+    print("COMMAND:",command)
 #    try:
 #        code = subprocess.call(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, cwd=workdir)
 #    except:
@@ -64,8 +69,8 @@ def bash(command, workdir=None):
         code = process.poll()
     except:
         code = 127
-    if len(output) > 0: print "OUTPUT:\n",output
-    print "CODE:",code
+    if len(output) > 0: print("OUTPUT:\n",output)
+    print("CODE:",code)
     return code,output
 
 def checkDependencies():
@@ -99,24 +104,24 @@ class BrowseControl(QHBoxLayout):
         self.edit = QLineEdit()
         self.addWidget(self.edit,1)
         self.edit.setToolTip(toolTip)
-        self.connect(self.edit, SIGNAL("textChanged(QString)"), self.edited)
+        self.edit.textChanged['QString'].connect(self.edited)
         #control's up button
         if oneUp:
             self.uButton = QPushButton("Up")
             self.addWidget(self.uButton)
             self.uButton.setToolTip("Go one level up")
-            self.connect(self.uButton, SIGNAL("clicked()"), self.oneUp)
+            self.uButton.clicked.connect(self.oneUp)
         #control's browse button
         self.button = QPushButton("Browse")
         self.addWidget(self.button)
         self.button.setToolTip("Select new "+label)
-        self.connect(self.button, SIGNAL("clicked()"), self.browse)
+        self.button.clicked.connect(self.browse)
         #control's default button
         if defaultPath != "":
             self.dButton = QPushButton("Default")
             self.addWidget(self.dButton)
             self.dButton.setToolTip("Reset "+label+" to '"+defaultPath+"'")
-            self.connect(self.dButton, SIGNAL("clicked()"), self.default)
+            self.dButton.clicked.connect(self.default)
 
         #function to call after successful change of path
         self.callback = callback
@@ -147,6 +152,8 @@ class BrowseControl(QHBoxLayout):
             #dialog for selecting directories
             dialog = QFileDialog(None,self.browseTitle,self.edit.text())
             dialog.setFileMode(QFileDialog.Directory)
+            if self.pathValid:
+                dialog.setDirectory(self.path)
             if self.showHidden:
                 dialog.setFilter(QDir.AllEntries | QDir.Hidden )
         else:
@@ -197,7 +204,7 @@ class EditControl(QHBoxLayout):
         self.addWidget(self.edit,1)
         self.callback = callback
         self.edit.setToolTip(toolTip)
-        self.connect(self.edit, SIGNAL("textChanged(QString)"), self.edited)
+        self.edit.textChanged['QString'].connect(self.edited)
         self.text = ""
 
     def edited(self):
@@ -412,12 +419,12 @@ class MainWindow(QMainWindow):
         self.temporary = tempfile.mkdtemp()
         #first argument is path to exe file
         path = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else ""
-        path = urllib.unquote(path)
-        self.executable.edit.setText(path.decode("utf-8"))
+        path = urllib.parse.unquote(path)
+        self.executable.edit.setText(path)
         #second argument is path to main application directory (ico files search path/initial name guess)
         path = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.dirname(self.executable.path).encode("utf-8")
-        path = urllib.unquote(path)
-        self.application.edit.setText(path.decode("utf-8"))
+        path = urllib.parse.unquote(path)
+        self.application.edit.setText(path)
 
         #directory for program's configuration file
         self.config = os.path.expanduser("~/.config/wlcreator")
@@ -565,7 +572,7 @@ class MainWindow(QMainWindow):
             self.setStatus("You need to select an icon first.")
             return
         #full path to selected icon
-        iconSource = unicode(items[0].data(Qt.UserRole).toString())
+        iconSource = unicode(items[0].data(Qt.UserRole))
         #icon's name
         iconName = os.path.basename(iconSource)
         #full path to destination icon
@@ -593,7 +600,7 @@ class MainWindow(QMainWindow):
         launcherPath = os.path.join(self.launcher.path, self.name.text+".desktop")
         #write launcher's contents
         launcherFile = open(launcherPath, "w")
-        launcherFile.write(launcherText.encode("utf-8"))
+        launcherFile.write(launcherText)
         launcherFile.close()
         #make it executable
         bash("chmod 755 \"" + launcherPath + "\"")
@@ -622,7 +629,7 @@ class MainWindow(QMainWindow):
         cfgRead = False
         if os.access(cfgfile, os.F_OK):
             #if config exists, load it
-            cfg = ConfigParser.SafeConfigParser(self.cfgDefaults)
+            cfg = configparser.ConfigParser(self.cfgDefaults)
             cfg.read(cfgfile)
             if "WLCreator" in cfg.sections():
                 self.launcher.edit.setText(cfg.get("WLCreator","Launcher").decode("utf-8"))
@@ -640,7 +647,7 @@ class MainWindow(QMainWindow):
         if not os.access(self.config, os.F_OK):
             os.makedirs(self.config)
         cfgfile = open(os.path.join(self.config,"settings.ini"),"w")
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.ConfigParser()
         if not cfg.has_section("WLCreator"):
             cfg.add_section("WLCreator")
         cfg.set("WLCreator","Launcher",self.launcher.path.encode("utf-8"))
